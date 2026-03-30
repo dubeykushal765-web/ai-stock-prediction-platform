@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Stock Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #0f172a;
+            color: white;
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 20px;
+        }
+
+        input {
+            padding: 10px;
+            width: 200px;
+            border-radius: 8px;
+            border: none;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #22c55e;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #16a34a;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 20px;
+        }
+
+        canvas {
+            margin-top: 30px;
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            background: #1e293b;
+            margin: 10px;
+            padding: 10px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>📈 AI Stock Prediction Platform</h1>
+
+<input id="symbol" placeholder="Enter stock (AAPL)">
+<button onclick="predictStock()">Predict</button>
+
+<h2 id="result"></h2>
+
+<canvas id="stockChart" width="400" height="200"></canvas>
+
+<h2>🔥 Top AI Stocks</h2>
+<ul id="topStocks"></ul>
+
+<script>
+
+let chart;
+
+async function predictStock() {
+
+    let symbol = document.getElementById("symbol").value;
+
+    let response = await fetch(
+        "http://127.0.0.1:8000/api/predict-stock/?symbol=" + symbol
+    );
+
+    let data = await response.json();
+
+    document.getElementById("result").innerHTML =
+        "Current Price: $" + data.current_price +
+        "<br>Predicted Price: $" + data.predicted_price;
+
+    loadChart(symbol);
+}
+
+async function loadChart(symbol) {
+
+    let response = await fetch(
+        "http://127.0.0.1:8000/api/stock-history/?symbol=" + symbol
+    );
+
+    let data = await response.json();
+
+    let labels = data.history.map(item => item.date);
+    let prices = data.history.map(item => item.price);
+
+    const ctx = document.getElementById('stockChart').getContext('2d');
+
+    if (chart) {
+        chart.destroy();
+    }
+
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Stock Price',
+                data: prices,
+                borderWidth: 2
+            }]
+        }
+    });
+}
+
+async function loadTopStocks() {
+
+    let response = await fetch(
+        "http://127.0.0.1:8000/api/top-stocks/"
+    );
+
+    let data = await response.json();
+
+    let list = document.getElementById("topStocks");
+
+    list.innerHTML = "";
+
+    data.stocks.forEach(stock => {
+
+        let item = document.createElement("li");
+
+        item.innerHTML =
+            stock.symbol +
+            " | Current: $" + stock.current_price +
+            " | Predicted: $" + stock.predicted_price;
+
+        list.appendChild(item);
+
+    });
+}
+
+loadTopStocks();
+
+</script>
+
+</body>
+</html>
