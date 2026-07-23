@@ -7,9 +7,8 @@ numpy==2.2.0
 pandas==2.2.3
 scikit-learn==1.8.0
 scipy==1.17.0
-yfinance==1.2.0
+yfinance==0.2.40
 requests==2.32.5
-curl_cffi==0.7.1
 asgiref==3.11.1
 certifi==2026.1.4
 charset-normalizer==3.4.4
