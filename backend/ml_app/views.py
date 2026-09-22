@@ -1,10 +1,8 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-import yfinance as yf
-from curl_cffi import requests as cffi_requests
+from datetime import datetime
+from .yahoo_client import get_chart_data
 from .stock_predict import predict_stock_price
-
-session = cffi_requests.Session(impersonate="chrome")
 
 
 @api_view(['GET'])
@@ -12,13 +10,12 @@ def predict_stock(request):
 
     symbol = request.GET.get("symbol", "AAPL")
 
-    stock = yf.Ticker(symbol, session=session)
-    data = stock.history(period="1d")
+    points = get_chart_data(symbol, range_="1d", interval="1d")
 
-    if data.empty:
+    if not points:
         return Response({"error": "Invalid stock symbol"})
 
-    current_price = round(data["Close"].iloc[-1], 2)
+    current_price = points[-1][1]
 
     predicted_price = predict_stock_price(symbol)
 
@@ -34,24 +31,24 @@ def stock_history(request):
 
     symbol = request.GET.get("symbol", "AAPL")
 
-    stock = yf.Ticker(symbol, session=session)
-    data = stock.history(period="1mo")
+    points = get_chart_data(symbol, range_="1mo", interval="1d")
 
-    if data.empty:
+    if not points:
         return Response({"error": "Invalid stock symbol"})
 
     history = []
-
-    for index, row in data.iterrows():
+    for ts, price in points:
+        date_str = datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d")
         history.append({
-            "date": str(index.date()),
-            "price": round(row["Close"], 2)
+            "date": date_str,
+            "price": price
         })
 
     return Response({
         "symbol": symbol,
         "history": history
     })
+
 
 @api_view(['GET'])
 def top_stocks(request):
@@ -62,13 +59,12 @@ def top_stocks(request):
 
     for symbol in stocks:
 
-        stock = yf.Ticker(symbol, session=session)
-        data = stock.history(period="1d")
+        points = get_chart_data(symbol, range_="1d", interval="1d")
 
-        if data.empty:
+        if not points:
             continue
 
-        current_price = round(data["Close"].iloc[-1], 2)
+        current_price = points[-1][1]
 
         predicted_price = predict_stock_price(symbol)
 

@@ -1,30 +1,24 @@
-import yfinance as yf
 import numpy as np
 from sklearn.linear_model import LinearRegression
-from curl_cffi import requests as cffi_requests
-
-session = cffi_requests.Session(impersonate="chrome")
+from .yahoo_client import get_chart_data
 
 
 def predict_stock_price(symbol):
 
-    stock = yf.Ticker(symbol, session=session)
-    data = stock.history(period="3mo")
+    points = get_chart_data(symbol, range_="3mo", interval="1d")
 
-    if data.empty:
+    if not points:
         return None
 
-    data = data.reset_index()
+    prices = [p[1] for p in points]
 
-    data["day"] = np.arange(len(data))
-
-    X = data[["day"]]
-    y = data["Close"]
+    X = np.arange(len(prices)).reshape(-1, 1)
+    y = np.array(prices)
 
     model = LinearRegression()
     model.fit(X, y)
 
-    next_day = np.array([[len(data)]])
+    next_day = np.array([[len(prices)]])
 
     predicted_price = model.predict(next_day)[0]
 
