@@ -1,11 +1,14 @@
 import yfinance as yf
 import numpy as np
 from sklearn.linear_model import LinearRegression
+from curl_cffi import requests as cffi_requests
+
+session = cffi_requests.Session(impersonate="chrome")
 
 
 def predict_stock_price(symbol):
 
-    stock = yf.Ticker(symbol)
+    stock = yf.Ticker(symbol, session=session)
     data = stock.history(period="3mo")
 
     if data.empty:

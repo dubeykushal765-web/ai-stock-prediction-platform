@@ -1,7 +1,10 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 import yfinance as yf
+from curl_cffi import requests as cffi_requests
 from .stock_predict import predict_stock_price
+
+session = cffi_requests.Session(impersonate="chrome")
 
 
 @api_view(['GET'])
@@ -9,7 +12,7 @@ def predict_stock(request):
 
     symbol = request.GET.get("symbol", "AAPL")
 
-    stock = yf.Ticker(symbol)
+    stock = yf.Ticker(symbol, session=session)
     data = stock.history(period="1d")
 
     if data.empty:
@@ -31,7 +34,7 @@ def stock_history(request):
 
     symbol = request.GET.get("symbol", "AAPL")
 
-    stock = yf.Ticker(symbol)
+    stock = yf.Ticker(symbol, session=session)
     data = stock.history(period="1mo")
 
     if data.empty:
@@ -59,7 +62,7 @@ def top_stocks(request):
 
     for symbol in stocks:
 
-        stock = yf.Ticker(symbol)
+        stock = yf.Ticker(symbol, session=session)
         data = stock.history(period="1d")
 
         if data.empty:
